@@ -1,4 +1,5 @@
-/* This file replicates some of the functionality of stdint.h on classic Borland
+/* 
+ * This file replicates some of the functionality of stdint.h on classic Borland
  * Compilers.
  */
 
