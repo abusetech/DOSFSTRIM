@@ -3,7 +3,7 @@
 #ifndef __ata_h__
 #define __ata_h__
 
-#include "borland_types.h"
+#include "BRLNDTYP.H"
 #include <string.h>
 
 #define IDE_PRIMARY_IO_BASE 0x1F0

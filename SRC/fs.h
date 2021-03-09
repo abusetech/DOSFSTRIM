@@ -1,7 +1,7 @@
 #ifndef __fs_h__
 #define __fs_h__
 
-#include "borland_types.h"
+#include "BRLNDTYP.H"
 
 typedef struct _MBR_partition_entry{
     uint8_t drive_attributes;

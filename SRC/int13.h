@@ -1,7 +1,7 @@
 #ifndef __int13_h__
 #define __int13_h__
 
-#include "borland_types.h"
+#include "BRLNDTYP.H"
 
 /* http://www.ctyme.com/intr/rb-0708.htm */
 /* https://en.wikipedia.org/wiki/INT_13H#INT_13h_AH=42h:_Extended_Read_Sectors_From_Drive */
