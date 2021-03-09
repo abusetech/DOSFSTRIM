@@ -1,3 +1,5 @@
+/* The following code is used for testing. This file was created while I was playing with this idea and will not be present in the finished application */
+
 #include <DOS.H>
 #include <time.h>
 #include <stdio.h>

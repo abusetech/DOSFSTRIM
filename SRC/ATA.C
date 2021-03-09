@@ -1,4 +1,4 @@
-#include "ATA.h"
+#include "ATA.H"
 
 uint16_t ATA_read_status_reg(uint16_t base){
     
@@ -20,8 +20,10 @@ ATA_identify_summary_t ATA_identify_summary(uint16_t base, uint8_t drive_sel, ui
      * base - device base address
      * drive_sel - Selects which device to use on the IDE channel (ATA_IDE_DEVICE_0 / ATA_IDE_DEVICE_1)
      * 
+     * On error, this function returns a blank (filled with zeros) structure.
      */
     
+    int i = 0, j = 0;
     /* Struct containing the results */
     ATA_identify_summary_t ident_struct;
     /* allocate a buffer to write the status information into */
@@ -58,6 +60,57 @@ ATA_identify_summary_t ATA_identify_summary(uint16_t base, uint8_t drive_sel, ui
     ident_struct.is_TRIM_SUPPORTED = buffer[ATA_DATA_SET_MANAGEMENT_COMMAND_SUPPORT] & 1;
     /* How many blocks can be TRIM'd at once? */
     ident_struct.max_data_set_management_blocks = buffer[ATA_IDENTIFY_MAX_DATA_SET_MANAGEMENT_BLOCKS];
+    
+    /* For historical reasons, the characters in the drive identity strings are byte-swapped in each word
+     * so each pair of characters in the string needs to be swapped in order to get them into a usable
+     * format, hence the following unusual string copy code */
+    
+    /* Model number string */
+    for(i=ATA_IDENTIFY_MODEL_STRING ; i < (ATA_IDENTIFY_MODEL_STRING + 19); i++){
+        ident_struct.model[j] = (buffer_512b[i]>>8);
+        ident_struct.model[++j] = (buffer_512b[i]&0xFF);
+        j++;
+    }   
+    j = 0;
+    for(i=ATA_IDENTIFY_SERIAL_STRING; i < (ATA_IDENTIFY_SERIAL_STRING + 9); i++){
+        ident_struct.serial[j] = (buffer_512b[i]>>8);
+        ident_struct.serial[++j] = (buffer_512b[i]&0xFF);
+        j++;
+    }   
+    j = 0;
+    for(i=ATA_IDENTIFY_FIMWARE_REVISION; i < (ATA_IDENTIFY_FIMWARE_REVISION + 3); i++){
+        ident_struct.firmware_ver[j] = (buffer_512b[i]>>8);
+        ident_struct.firmware_ver[++j] = (buffer_512b[i]&0xFF);
+        j++;
+    }  
+    
+    /* The Model, Serial number, and Firmware strings are all space-padded and must be converted to
+     * null-terminated strings before use. */
+    for(i = 40; i >= 0; i--){
+        if (ident_struct.model[i] != 0x20 && ident_struct.model[i] != 0){
+            break;
+        }else{
+            ident_struct.model[i] = 0;
+        }
+    }
+    
+    for(i = 20; i >= 0; i--){
+        if (ident_struct.serial[i] != 0x20 && ident_struct.serial[i] != 0){
+            break;
+        }else{
+            ident_struct.serial[i] = 0;
+        }
+    }
+    
+    for(i = 8; i >= 0; i--){
+        if (ident_struct.firmware_ver[i] != 0x20 && ident_struct.firmware_ver[i] != 0){
+            break;
+        }else{
+            ident_struct.firmware_ver[i] = 0;
+        }
+    }
+    
+    return ident_struct;
     
 }
 

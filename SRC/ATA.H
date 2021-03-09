@@ -54,6 +54,7 @@
 #define ATA_DATA_SET_MANAGEMENT_COMMAND_SUPPORT 169 /* Contains flags indicating whether TRIM is supported */
 
 typedef struct _ATA_identify_summary_struct{
+    /* char arrays for the model, serial number and firmware revision strings + one null char */
     char model [41];
     char serial [21];
     char firmware_ver[9];
