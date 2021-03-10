@@ -3,7 +3,7 @@
 uint16_t ATA_read_status_reg(uint16_t base){
     
     /* Reads the status register of the currently selected drive */
-    /* This is useful for detecting busses with no connected drives, since they will read
+    /* This is useful for detecting buses with no connected drives, since they will read
      * 0xFFFF (invalid).
      */
     
@@ -71,12 +71,14 @@ ATA_identify_summary_t ATA_identify_summary(uint16_t base, uint8_t drive_sel, ui
         ident_struct.model[++j] = (buffer_512b[i]&0xFF);
         j++;
     }   
+    /* Serial number string */
     j = 0;
     for(i=ATA_IDENTIFY_SERIAL_STRING; i < (ATA_IDENTIFY_SERIAL_STRING + 9); i++){
         ident_struct.serial[j] = (buffer_512b[i]>>8);
         ident_struct.serial[++j] = (buffer_512b[i]&0xFF);
         j++;
     }   
+    /* Firmware string */
     j = 0;
     for(i=ATA_IDENTIFY_FIMWARE_REVISION; i < (ATA_IDENTIFY_FIMWARE_REVISION + 3); i++){
         ident_struct.firmware_ver[j] = (buffer_512b[i]>>8);
@@ -147,6 +149,8 @@ int ATA_identify_raw(uint16_t base, uint8_t drive_sel, uint16_t * buffer_512b, u
     outportb(base + ATA_DRIVE_REGISTER, drive_sel); /*0 selects dev 0, 0x10 selects device 1*/
     /*Write the command to the register - this sends the command to the drive*/
     outportb(base + ATA_COMMAND_REGISTER, ATA_COMMAND_IDENTIFY_DEVICE); /*IDENTIFY_DEVICE*/
+    enable();
+    
     /*Wait for data*/
     timeout_count = 0;
     while(get_ide_status(base) & DRQ == 0){
@@ -160,7 +164,7 @@ int ATA_identify_raw(uint16_t base, uint8_t drive_sel, uint16_t * buffer_512b, u
     for (i = 0; i < 256; i++){
         buffer_512b[i] = inport(base);
     }
-    enable();
+    
     return 1;
 }
 
@@ -177,6 +181,7 @@ int ATA_LBA_28_PIO_read_absolute(uint16_t base, uint8_t drive_sel, uint32_t lba_
     
     int word_count = 0;
     int block_count = 0;
+    uint8_t drive_sel_reg = 0;
     
     /* invalid device selected */
     if(drive_sel != ATA_IDE_DEVICE_0 || drive_sel != ATA_IDE_DEVICE_1){
@@ -185,8 +190,9 @@ int ATA_LBA_28_PIO_read_absolute(uint16_t base, uint8_t drive_sel, uint32_t lba_
     
     /* bit 6 (0x40) set to select LBA mode */
     /* The upper bits of the LBA address are OR'd with the drive select reg */
-    uint8_t drive_sel_reg = 0x40 | drive_sel | ((lba_addr & 0x0F000000) >> 24); 
+    drive_sel_reg = 0x40 | drive_sel | ((lba_addr & 0x0F000000) >> 24); 
     
+    disable();
     outportb(base + ATA_DRIVE_REGISTER, drive_sel_reg);
     outportb(base + ATA_ERROR_REGISTER, 0);
     outportb(base + ATA_SECTOR_COUNT_REGISTER, sect_count);
@@ -194,8 +200,10 @@ int ATA_LBA_28_PIO_read_absolute(uint16_t base, uint8_t drive_sel, uint32_t lba_
     outportb(base + ATA_LBA_MID_REGISTER, (uint8_t)((lba_addr & 0xFF00)>>8));
     outportb(base + ATA_LBA_HIGH_REGISTER, (uint8_t)((lba_addr & 0xFF0000)>>16));
     outportb(base + ATA_COMMAND_REGISTER, ATA_COMMAND_READ_SECTORS)
+    enable();
     
     for (block_count = 0; block_count < sect_count; block_count++){
+        /* TODO wait for DRQ with timeout */
         for (word_count = 0; word_count < 256; word_count++){
             dest_buffer[word_count + 256 * block_count] = inport(base);
         }
