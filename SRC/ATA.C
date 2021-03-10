@@ -184,7 +184,7 @@ int ATA_LBA_28_PIO_read_absolute(uint16_t base, uint8_t drive_sel, uint32_t lba_
     uint8_t drive_sel_reg = 0;
     
     /* invalid device selected */
-    if(drive_sel != ATA_IDE_DEVICE_0 || drive_sel != ATA_IDE_DEVICE_1){
+    if(drive_sel != ATA_IDE_DEVICE_0 && drive_sel != ATA_IDE_DEVICE_1){
         return 1;
     }
     
