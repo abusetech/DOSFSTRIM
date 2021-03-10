@@ -191,7 +191,7 @@ int ATA_LBA_28_PIO_read_absolute(uint16_t base, uint8_t drive_sel, uint32_t lba_
     /* bit 6 (0x40) set to select LBA mode */
     /* The upper bits of the LBA address are OR'd with the drive select reg */
     drive_sel_reg = 0x40 | drive_sel | ((lba_addr & 0x0F000000) >> 24); 
-    
+    /* TODO wait for DRDY with timeout */
     disable();
     outportb(base + ATA_DRIVE_REGISTER, drive_sel_reg);
     outportb(base + ATA_ERROR_REGISTER, 0);
@@ -210,4 +210,16 @@ int ATA_LBA_28_PIO_read_absolute(uint16_t base, uint8_t drive_sel, uint32_t lba_
     }
     
     return 0;
+}
+
+int ATA_select_drive(uint16_t base, uint8_t drive_del){
+    /* Selects an ATA device on an IDE channel */
+    /* Includes a slight delay to allow the device to respond */
+    int count = 0;
+    outportb(base + ATA_DRIVE_REGISTER, drive_sel);
+    /* 14 * 30nS ~= 420nS delay as suggested in https://wiki.osdev.org/ATA_PIO_Mode */
+    for(count = 0; count < 14; count++){
+        inportb(base + ATA_DRIVE_STATUS_REGISTER);
+    }
+    
 }

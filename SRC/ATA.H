@@ -126,5 +126,6 @@ uint16_t ATA_read_status_reg(uint16_t base);
 ATA_identify_summary_t ATA_identify_summary(uint16_t base, uint8_t drive_sel, uint32_t timeout);
 int ATA_identify_raw(uint16_t base, uint8_t drive_sel, uint16_t * buffer_512b, uint32_t timeout);
 int ATA_LBA_28_PIO_read_absolute(uint16_t base, uint8_t drive_sel, uint32_t lba_addr, uint8_t sect_count, uint16_t * dest_buffer);
+int ATA_select_drive(uint16_t base);
 
 #endif
