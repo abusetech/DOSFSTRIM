@@ -6,17 +6,20 @@
 
 /*
  * MS-DOS Timer library that hooks INT 1C
- * See http://fd.lod.bz/rbil/interrup/bios/1c.html
+ * Based on information from http://fd.lod.bz/rbil/interrup/bios/1c.html
  * 
  */
+
+#define TIMERS_MILLISECONDS_PER_TICK 55
 
 void far * __original_1C_vect = 0;
 volatile uint32_t __timer_tick_count = 0;
 
 uint32_t timers_get_tick_count();
-void timers_delay_mills(uint32_t);
+void timers_delay_millis(uint32_t);
 interrupt _timer_tick_int_handler();
 void timers_initialize_timers();
 void timers_unhook_timers();
-
+uint8_t wait_until_IO_bit_set_timeout(uint16_t addr, uint8_t mask, uint32_t timout_ms);
+uint8_t wait_until_IO_bit_clear_timeout(uint16_t addr, uint8_t mask, uint32_t timout_ms);
 #endif
