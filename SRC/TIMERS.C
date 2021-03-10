@@ -1,5 +1,7 @@
 #include "TIMERS.H"
 
+/* TODO: Check that 1C has been hooked before executing any wait function (Debug aid)
+ */
 
 uint32_t timers_get_tick_count(){
     return __timer_tick_count;

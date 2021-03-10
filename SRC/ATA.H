@@ -4,6 +4,7 @@
 #define __ata_h__
 
 #include "BRLNDTYP.H"
+#include "TIMERS.H"
 #include <string.h>
 
 #define IDE_PRIMARY_IO_BASE 0x1F0

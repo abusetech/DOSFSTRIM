@@ -124,8 +124,7 @@ int ATA_identify_raw(uint16_t base, uint8_t drive_sel, uint16_t * buffer_512b, u
      * base - device base address
      * drive_sel - Selects which device to use on the IDE channel (ATA_IDE_DEVICE_0 / ATA_IDE_DEVICE_1)
      * buffer_512b - Pointer to a 512byte buffer
-     * timeout - Upper count to use for the spin lock. Interrupts need to be disabled for this command to run,
-     * so using the system timers isn't possible. Set this to a large value if you simply want to ignore it
+     * timeout - Timeout in milliseconds. 
      */
     
     int i = 0;
@@ -134,10 +133,11 @@ int ATA_identify_raw(uint16_t base, uint8_t drive_sel, uint16_t * buffer_512b, u
     memset(buffer_512b, 0, 512);
     
     /*Wait until the drive isn't busy*/
-    while(get_ide_status(base) & BSY){
-        timeout_count++;
-        if (timeout_count > timeout){return 0;}
+    if(!timers_wait_until_IO_bit_clear_timeout(base + ATA_DRIVE_STATUS_REGISTER, ATA_BSY, timeout)){
+        /* Timeout */
+        return 1;
     }
+
     /*disable interrupts*/
     disable();
     /* Set LBA, sector count registers to zero */
@@ -152,20 +152,20 @@ int ATA_identify_raw(uint16_t base, uint8_t drive_sel, uint16_t * buffer_512b, u
     enable();
     
     /*Wait for data*/
-    timeout_count = 0;
-    while(get_ide_status(base) & DRQ == 0){
-        timeout_count++;
-        if (timeout_count > timeout >> 1){
-            enable();
-            return 0;
-        } 
+    if(!timers_wait_until_IO_bit_set_timeout(base + ATA_DRIVE_STATUS_REGISTER, ATA_DRQ, timeout)){
+        /* Timeout */
+        /* TODO: Dealing with DF set here would be a good idea 
+         * (ERR is set as soon as IDENTIFY_DEVICE is commanded)
+         */
+        return 1;       
     }
+    
     /*Read in the 512 byte block*/
     for (i = 0; i < 256; i++){
         buffer_512b[i] = inport(base);
     }
     
-    return 1;
+    return 0;
 }
 
 int ATA_LBA_28_PIO_read_absolute(uint16_t base, uint8_t drive_sel, uint32_t lba_addr, uint8_t sect_count, uint16_t * dest_buffer){
