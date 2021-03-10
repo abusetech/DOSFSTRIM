@@ -20,6 +20,6 @@ void timers_delay_millis(uint32_t);
 interrupt _timer_tick_int_handler();
 void timers_initialize_timers();
 void timers_unhook_timers();
-uint8_t wait_until_IO_bit_set_timeout(uint16_t addr, uint8_t mask, uint32_t timout_ms);
-uint8_t wait_until_IO_bit_clear_timeout(uint16_t addr, uint8_t mask, uint32_t timout_ms);
+uint8_t timers_wait_until_IO_bit_set_timeout(uint16_t addr, uint8_t mask, uint32_t timout_ms);
+uint8_t timers_wait_until_IO_bit_clear_timeout(uint16_t addr, uint8_t mask, uint32_t timout_ms);
 #endif
