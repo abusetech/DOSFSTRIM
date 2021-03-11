@@ -1,5 +1,4 @@
 #include "TIMERS.H"
-#include <stdio.h>
 
 /* TODO: Check that 1C has been hooked before executing any wait function (Debug aid)
  */
@@ -16,7 +15,6 @@ void timers_delay_millis(uint32_t delay){
 void interrupt _timer_tick_int_handler(){
     /*disable();*/
     __timer_tick_count++;
-    printf(".");
     /*enable();*/
 }
 
