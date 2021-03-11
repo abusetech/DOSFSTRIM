@@ -192,6 +192,10 @@ int ATA_LBA_28_PIO_read_absolute(uint16_t base, uint8_t drive_sel, uint32_t lba_
     /* The upper bits of the LBA address are OR'd with the drive select reg */
     drive_sel_reg = 0x40 | drive_sel | ((lba_addr & 0x0F000000) >> 24); 
     /* TODO wait for DRDY with timeout */
+    if(!timers_wait_until_IO_bit_clear_timeout(base + ATA_DRIVE_STATUS_REGISTER, ATA_BSY, timeout)){
+        /* Timeout */
+        return 1;       
+    }
     disable();
     outportb(base + ATA_DRIVE_REGISTER, drive_sel_reg);
     outportb(base + ATA_ERROR_REGISTER, 0);
@@ -203,7 +207,11 @@ int ATA_LBA_28_PIO_read_absolute(uint16_t base, uint8_t drive_sel, uint32_t lba_
     enable();
     
     for (block_count = 0; block_count < sect_count; block_count++){
-        /* TODO wait for DRQ with timeout */
+        /* TODO: Checking for ERR / DF here would be wise */
+        if(!timers_wait_until_IO_bit_clear_timeout(base + ATA_DRIVE_STATUS_REGISTER, ATA_DRQ, timeout)){
+            /* Timeout */
+            return 1;       
+        }
         for (word_count = 0; word_count < 256; word_count++){
             dest_buffer[word_count + 256 * block_count] = inport(base);
         }
@@ -212,7 +220,7 @@ int ATA_LBA_28_PIO_read_absolute(uint16_t base, uint8_t drive_sel, uint32_t lba_
     return 0;
 }
 
-int ATA_select_drive(uint16_t base, uint8_t drive_del){
+int ATA_select_drive(uint16_t base, uint8_t drive_sel){
     /* Selects an ATA device on an IDE channel */
     /* Includes a slight delay to allow the device to respond */
     int count = 0;
