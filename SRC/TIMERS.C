@@ -1,4 +1,5 @@
 #include "TIMERS.H"
+#include <stdio.h>
 
 /* TODO: Check that 1C has been hooked before executing any wait function (Debug aid)
  */
@@ -8,19 +9,21 @@ uint32_t timers_get_tick_count(){
 }
 
 void timers_delay_millis(uint32_t delay){
-    uint32_t start = __timer_tick_count;
-    while(((__timer_tick_count - start) /  TIMERS_MILLISECONDS_PER_TICK) < delay){}
+    uint32_t end = __timer_tick_count + delay / TIMERS_MILLISECONDS_PER_TICK;
+    while(__timer_tick_count < end){}
 }
 
-interrupt _timer_tick_int_handler(){
-    disable();
-    __timer_tick_count++;
-    enable();
+void interrupt _timer_tick_int_handler(){
+    /*disable();*/
+    (*__timer_tick_ptr)++;
+    printf(".");
+    /*enable();*/
 }
 
 void timers_initialize_timers(){
     __original_1C_vect = getvect(0x1C);
     __timer_tick_count = 0;
+    __timer_tick_ptr = & __timer_tick_count;
     disable();
     setvect(0x1C, _timer_tick_int_handler);
     enable();
@@ -34,7 +37,7 @@ void timers_unhook_timers(){
     __original_1C_vect = 0;
 }
 
-uint8_t timers_wait_until_IO_bit_set_timeout(uint16_t addr, uint8_t mask, uint32_t timout_ms){
+uint8_t timers_wait_until_IO_bit_set_timeout(uint16_t addr, uint8_t mask, uint32_t timeout_ms){
     /*
      * Loops until the bit(s) specified by mask are set in the 8 bit I/O port at addr
      * or until the timeout_ms milliseconds have elapsed.
@@ -55,7 +58,7 @@ uint8_t timers_wait_until_IO_bit_set_timeout(uint16_t addr, uint8_t mask, uint32
     return 0;
 }
 
-uint8_t timers_wait_until_IO_bit_clear_timeout(uint16_t addr, uint8_t mask, uint32_t timout_ms){
+uint8_t timers_wait_until_IO_bit_clear_timeout(uint16_t addr, uint8_t mask, uint32_t timeout_ms){
     /*
      * Loops until the bit(s) specified by mask are CLEAR in the 8 bit I/O port at addr
      * or until the timeout_ms milliseconds have elapsed.
