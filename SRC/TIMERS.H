@@ -16,7 +16,6 @@
 
 void interrupt (* __original_1C_vect)() = 0;
 volatile uint32_t __timer_tick_count = 0;
-uint32_t far * __timer_tick_ptr = 0;
 
 uint32_t timers_get_tick_count();
 void timers_delay_millis(uint32_t);

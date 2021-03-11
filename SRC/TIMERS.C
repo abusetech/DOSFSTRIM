@@ -15,7 +15,7 @@ void timers_delay_millis(uint32_t delay){
 
 void interrupt _timer_tick_int_handler(){
     /*disable();*/
-    (*__timer_tick_ptr)++;
+    __timer_tick_count++;
     printf(".");
     /*enable();*/
 }
@@ -23,7 +23,6 @@ void interrupt _timer_tick_int_handler(){
 void timers_initialize_timers(){
     __original_1C_vect = getvect(0x1C);
     __timer_tick_count = 0;
-    __timer_tick_ptr = & __timer_tick_count;
     disable();
     setvect(0x1C, _timer_tick_int_handler);
     enable();
@@ -49,7 +48,7 @@ uint8_t timers_wait_until_IO_bit_set_timeout(uint16_t addr, uint8_t mask, uint32
      */
     uint8_t prt = 0;
     uint32_t start = 0;
-    while(((__timer_tick_count - start) /  TIMERS_MILLISECONDS_PER_TICK) < timeout_ms){
+    while(((__timer_tick_count - start) * TIMERS_MILLISECONDS_PER_TICK) < timeout_ms){
         prt = inportb(addr) & mask;
         if (prt){
             return prt;
@@ -74,7 +73,7 @@ uint8_t timers_wait_until_IO_bit_clear_timeout(uint16_t addr, uint8_t mask, uint
      */
     uint8_t prt = 0;
     uint32_t start = 0;
-    while(((__timer_tick_count - start) /  TIMERS_MILLISECONDS_PER_TICK) < timeout_ms){
+    while(((__timer_tick_count - start) * TIMERS_MILLISECONDS_PER_TICK) < timeout_ms){
         prt = ~inportb(addr) & mask;
         if (prt){
             return prt;
