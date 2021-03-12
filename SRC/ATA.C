@@ -19,6 +19,7 @@ ATA_identify_summary_t ATA_identify_summary(uint16_t base, uint8_t drive_sel, ui
      * 
      * base - device base address
      * drive_sel - Selects which device to use on the IDE channel (ATA_IDE_DEVICE_0 / ATA_IDE_DEVICE_1)
+     * timeout - timeout in milliseconds
      * 
      * On error, this function returns a blank (filled with zeros) structure.
      */
