@@ -58,7 +58,7 @@ ATA_identify_summary_t ATA_identify_summary(uint16_t base, uint8_t drive_sel, ui
     /* DMA support is indicated by a flag in the CAPABILITIES_1 word */
     ident_struct.is_DMA_supported = (buffer[ATA_IDENTIFY_CAPABILITIES_1] & (1 << 9)) > 0 ? 1 : 0;
     /* TRIM support is indicated by a flag in the DATA_SET_MANAGEMENT word */
-    ident_struct.is_TRIM_SUPPORTED = buffer[ATA_DATA_SET_MANAGEMENT_COMMAND_SUPPORT] & 1;
+    ident_struct.is_TRIM_supported = buffer[ATA_DATA_SET_MANAGEMENT_COMMAND_SUPPORT] & 1;
     /* How many blocks can be TRIM'd at once? */
     ident_struct.max_data_set_management_blocks = buffer[ATA_IDENTIFY_MAX_DATA_SET_MANAGEMENT_BLOCKS];
     
@@ -68,22 +68,22 @@ ATA_identify_summary_t ATA_identify_summary(uint16_t base, uint8_t drive_sel, ui
     
     /* Model number string */
     for(i=ATA_IDENTIFY_MODEL_STRING ; i < (ATA_IDENTIFY_MODEL_STRING + 19); i++){
-        ident_struct.model[j] = (buffer_512b[i]>>8);
-        ident_struct.model[++j] = (buffer_512b[i]&0xFF);
+        ident_struct.model[j] = (buffer[i]>>8);
+        ident_struct.model[++j] = (buffer[i]&0xFF);
         j++;
     }   
     /* Serial number string */
     j = 0;
     for(i=ATA_IDENTIFY_SERIAL_STRING; i < (ATA_IDENTIFY_SERIAL_STRING + 9); i++){
-        ident_struct.serial[j] = (buffer_512b[i]>>8);
-        ident_struct.serial[++j] = (buffer_512b[i]&0xFF);
+        ident_struct.serial[j] = (buffer[i]>>8);
+        ident_struct.serial[++j] = (buffer[i]&0xFF);
         j++;
     }   
     /* Firmware string */
     j = 0;
     for(i=ATA_IDENTIFY_FIMWARE_REVISION; i < (ATA_IDENTIFY_FIMWARE_REVISION + 3); i++){
-        ident_struct.firmware_ver[j] = (buffer_512b[i]>>8);
-        ident_struct.firmware_ver[++j] = (buffer_512b[i]&0xFF);
+        ident_struct.firmware_ver[j] = (buffer[i]>>8);
+        ident_struct.firmware_ver[++j] = (buffer[i]&0xFF);
         j++;
     }  
     
@@ -129,12 +129,10 @@ int ATA_identify_raw(uint16_t base, uint8_t drive_sel, uint16_t * buffer_512b, u
      */
     
     int i = 0;
-    long timeout_count = 0;
-    
     memset(buffer_512b, 0, 512);
     
     /*Wait until the drive isn't busy*/
-    if(!timers_wait_until_IO_bit_clear_timeout(base + ATA_DRIVE_STATUS_REGISTER, ATA_BSY, timeout)){
+    if(!timers_wait_until_IO_bit_clear_timeout(base + ATA_STATUS_REGISTER, ATA_BSY, timeout)){
         /* Timeout */
         return 1;
     }
@@ -153,7 +151,7 @@ int ATA_identify_raw(uint16_t base, uint8_t drive_sel, uint16_t * buffer_512b, u
     enable();
     
     /*Wait for data*/
-    if(!timers_wait_until_IO_bit_set_timeout(base + ATA_DRIVE_STATUS_REGISTER, ATA_DRQ, timeout)){
+    if(!timers_wait_until_IO_bit_set_timeout(base + ATA_STATUS_REGISTER, ATA_DRQ, timeout)){
         /* Timeout */
         /* TODO: Dealing with DF set here would be a good idea 
          * (ERR is set as soon as IDENTIFY_DEVICE is commanded)
@@ -169,7 +167,7 @@ int ATA_identify_raw(uint16_t base, uint8_t drive_sel, uint16_t * buffer_512b, u
     return 0;
 }
 
-int ATA_LBA_28_PIO_read_absolute(uint16_t base, uint8_t drive_sel, uint32_t lba_addr, uint8_t sect_count, uint16_t * dest_buffer){
+int ATA_LBA_28_PIO_read_absolute(uint16_t base, uint8_t drive_sel, uint32_t lba_addr, uint8_t sect_count, uint16_t * dest_buffer, uint32_t timeout){
     
     /*
      * 28bit Programmed I/O Read directly from ATA device
@@ -193,7 +191,7 @@ int ATA_LBA_28_PIO_read_absolute(uint16_t base, uint8_t drive_sel, uint32_t lba_
     /* The upper bits of the LBA address are OR'd with the drive select reg */
     drive_sel_reg = 0x40 | drive_sel | ((lba_addr & 0x0F000000) >> 24); 
     /* TODO wait for DRDY with timeout */
-    if(!timers_wait_until_IO_bit_clear_timeout(base + ATA_DRIVE_STATUS_REGISTER, ATA_BSY, timeout)){
+    if(!timers_wait_until_IO_bit_clear_timeout(base + ATA_STATUS_REGISTER, ATA_BSY, timeout)){
         /* Timeout */
         return 1;       
     }
@@ -204,12 +202,12 @@ int ATA_LBA_28_PIO_read_absolute(uint16_t base, uint8_t drive_sel, uint32_t lba_
     outportb(base + ATA_LBA_LOW_REGISTER, (uint8_t)(lba_addr & 0xFF));
     outportb(base + ATA_LBA_MID_REGISTER, (uint8_t)((lba_addr & 0xFF00)>>8));
     outportb(base + ATA_LBA_HIGH_REGISTER, (uint8_t)((lba_addr & 0xFF0000)>>16));
-    outportb(base + ATA_COMMAND_REGISTER, ATA_COMMAND_READ_SECTORS)
+    outportb(base + ATA_COMMAND_REGISTER, ATA_COMMAND_READ_SECTORS);
     enable();
     
     for (block_count = 0; block_count < sect_count; block_count++){
         /* TODO: Checking for ERR / DF here would be wise */
-        if(!timers_wait_until_IO_bit_clear_timeout(base + ATA_DRIVE_STATUS_REGISTER, ATA_DRQ, timeout)){
+        if(!timers_wait_until_IO_bit_clear_timeout(base + ATA_STATUS_REGISTER, ATA_DRQ, timeout)){
             /* Timeout */
             return 1;       
         }
@@ -228,7 +226,7 @@ int ATA_select_drive(uint16_t base, uint8_t drive_sel){
     outportb(base + ATA_DRIVE_REGISTER, drive_sel);
     /* 14 * 30nS ~= 420nS delay as suggested in https://wiki.osdev.org/ATA_PIO_Mode */
     for(count = 0; count < 14; count++){
-        inportb(base + ATA_DRIVE_STATUS_REGISTER);
+        inportb(base + ATA_STATUS_REGISTER);
     }
     
 }

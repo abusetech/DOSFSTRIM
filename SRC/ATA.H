@@ -7,10 +7,10 @@
 #include "TIMERS.H"
 #include <string.h>
 
-#define IDE_PRIMARY_IO_BASE 0x1F0
-#define IDE_PRIMARY_CONTROL_BASE 0x3F6
-#define IDE_SECONDARY_IO_BASE 0x170
-#define IDE_SECONDARY_CONTROL_BASE 0x376
+#define ATA_PRIMARY_IO_BASE 0x1F0
+#define ATA_PRIMARY_CONTROL_BASE 0x3F6
+#define ATA_SECONDARY_IO_BASE 0x170
+#define ATA_SECONDARY_CONTROL_BASE 0x376
 
 #define ATA_IDE_DEVICE_0 0
 #define ATA_IDE_DEVICE_1 0x10
@@ -50,7 +50,7 @@
 #define ATA_IDENTIFY_SERIAL_STRING 10           /* 10 words (words 10..19) */
 #define ATA_IDENTIFY_FIMWARE_REVISION 23        /* 4 words (words 23..26) */
 #define ATA_IDENTIFY_MODEL_STRING 27            /* 20 words (words 27..46)  */
-#define ATA_IDENTIFY_CAPABILITES_1 49           /* Contains flags for LBA and DMA support */
+#define ATA_IDENTIFY_CAPABILITIES_1 49          /* Contains flags for LBA and DMA support */
 #define ATA_IDENTIFY_MAX_DATA_SET_MANAGEMENT_BLOCKS 105
 #define ATA_DATA_SET_MANAGEMENT_COMMAND_SUPPORT 169 /* Contains flags indicating whether TRIM is supported */
 
@@ -118,7 +118,7 @@ typedef struct _ATA_IDENTIFY_struct{
     uint16_t udma_modes; /* word 88 */
     uint16_t ignored_2[80]; /* words 89 .. 168 */
     uint16_t data_set_management_support_flags; /* word 169 */
-    uint16_t ignored_3[85] /* word 170 .. 254 */
+    uint16_t ignored_3[85]; /* word 170 .. 254 */
     uint16_t integrity_word;
 } ATA_IDENTIFY_out_struct_t;
 
@@ -126,7 +126,7 @@ typedef struct _ATA_IDENTIFY_struct{
 uint16_t ATA_read_status_reg(uint16_t base);
 ATA_identify_summary_t ATA_identify_summary(uint16_t base, uint8_t drive_sel, uint32_t timeout);
 int ATA_identify_raw(uint16_t base, uint8_t drive_sel, uint16_t * buffer_512b, uint32_t timeout);
-int ATA_LBA_28_PIO_read_absolute(uint16_t base, uint8_t drive_sel, uint32_t lba_addr, uint8_t sect_count, uint16_t * dest_buffer);
-int ATA_select_drive(uint16_t base);
+int ATA_LBA_28_PIO_read_absolute(uint16_t base, uint8_t drive_sel, uint32_t lba_addr, uint8_t sect_count, uint16_t * dest_buffer, uint32_t timeout);
+int ATA_select_drive(uint16_t base, uint8_t drive_sel);
 
 #endif
