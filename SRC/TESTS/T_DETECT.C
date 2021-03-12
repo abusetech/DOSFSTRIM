@@ -17,7 +17,7 @@ void pretty_print(ATA_identify_summary_t * summary){
 
 main(){
     ATA_identify_summary_t summary;
-    
+    timers_initialize_timers();
     printf("Identifying Drives.\n");
     /* Primary bus first */
     printf("IDE Primary bus status %#04X\n", ATA_read_status_reg(ATA_PRIMARY_IO_BASE));
@@ -41,4 +41,5 @@ main(){
           summary = ATA_identify_summary(ATA_SECONDARY_IO_BASE, ATA_IDE_DEVICE_1, ATA_TIMEOUT);
           pretty_print(&summary);
      }
+     timers_unhook_timers();
 }
