@@ -11,8 +11,8 @@ push bp
 push dx
 push eax
 mov bp, sp
-mov dx, [bp+16]    ;addr
-mov eax, [bp+12]   ;dword
+mov dx, [bp+12]    ;addr
+mov eax, [bp+16]   ;dword
 out dx, eax        ;output word in eax to address in dx
 pop eax
 pop dx
