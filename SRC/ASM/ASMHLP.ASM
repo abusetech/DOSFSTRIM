@@ -25,7 +25,7 @@ GLOBAL _inportl32
 _inportl32:
 push bp
 mov bp, sp
-mov dx,[bp+6]   ;move addr into DX (pushed to SP+6 before call) 
+mov dx,[bp+8]   ;move addr into DX 
 in eax, dx      ;read 32bit port at address DX into EAX
 mov edx, eax    ;copy the result to edx
 shr edx, 16     ;shift the bits in edx so that dx contains the upper word
