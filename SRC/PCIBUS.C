@@ -26,40 +26,36 @@ typedef struct __PCI_config_header_common{
  */
 
 uint32_t PCI_config_read_dword(uint8_t bus, uint8_t device, uint8_t function, uint8_t reg){
-    uint32_t address = 0;
+    uint32_t lbus, ldevice, lfunction;
+    uint32_t address = 0, read = 0;
+    
+    lbus = bus;
+    ldevice = device;
+    lfunction = function;
     /* The first bit is a flag that tells the PCI bus to update the value at CONFIG_DATA */
     /* The register to be addressed in the configuration space must be double word (32bit) aligned, so the last two bits must be zero*/
-    address = 0x80000000l | ((uint32_t)bus)<<16 | (((uint32_t)device ) & 0x3f)<<11 | ((uint32_t)function)<<8 | reg &0xFC;
+    address =   0x80000000l |                           \
+                (lbus<<16) |                            \
+                (ldevice<<11) |                         \
+                (lfunction<<8) |                        \
+                (reg&0xFC);    
     /* it might be possible to use 16 bit reads here 
-       ie. outport(PCI_CONFIG_ADDRESS + 2, address & 0xFFFF);
-           outport(PCI_CONFIG_ADDRESS, address >> 16); 
-           
+       ie. outport(PCI_CONFIG_ADDRESS, address & 0xFFFF);
+           outport(PCI_CONFIG_ADDRESS+2, address >> 16); 
      */
+
+    printf("ADDR %lX ", address);
+    disable();
     outportl32(PCI_CONFIG_ADDRESS, address);
-    return inportl32(PCI_CONFIG_DATA);
-    /*return ((uint32_t)inport(PCI_CONFIG_DATA))<<16 | inport(PCI_CONFIG_DATA + 2);*/
+    read = inportl32(PCI_CONFIG_DATA);
+    enable();
+    return read;
 }
 
 uint16_t PCI_config_read_word(uint8_t bus, uint8_t device, uint8_t function, uint8_t reg){
-    uint32_t address = 0;
-    /* The first bit is a flag that tells the PCI bus to update the value at CONFIG_DATA */
-    /* The register to be addressed in the configuration space must be double word (32bit) aligned, so the last two bits must be zero*/
-    address = 0x80000000l | ((uint32_t)bus)<<16 | ((uint32_t)device & 0x3f)<<11 | ((uint32_t)function)<<8 | reg &0xFC;
-    /* Again, it might be possible to use 16 bit reads here */
-    outportl32(PCI_CONFIG_ADDRESS, address);
-    /*outport(PCI_CONFIG_ADDRESS + 2, address & 0xFFFF);
-    outport(PCI_CONFIG_ADDRESS, address >> 16);*/
-    /* If bit two is set in reg, return the lower half of the double word*/
-    /* Otherwise, return the upper half of the word */
-    return (inportl32(PCI_CONFIG_DATA) >> ((reg & 2) << 3)) & 0xFFFF;
-    /*This could also be accomplished using two separate inport() calls */
-    /* 
-     if (reg & 2){
-         return inport(PCI_CONFIG_DATA + 2);
-     }else{
-         return inport(PCI_CONFIG_DATA);
-     }
-     */
+    uint32_t pci_dword = 0;
+    pci_dword = PCI_config_read_dword(bus, device, function, reg);
+    return (pci_dword>>((reg & 0x02) * 8))&0xFFFF;
 }
 
 uint8_t PCI_config_read_byte(uint8_t bus, uint8_t device, uint8_t function, uint8_t reg){

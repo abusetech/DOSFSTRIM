@@ -8,12 +8,12 @@ GLOBAL _outportl32
 section .text
 _outportl32:
 push bp
+mov bp, sp
 push dx
 push eax
-mov bp, sp
-mov dx, [bp+12]    ;addr
-mov eax, [bp+16]   ;dword
-out dx, eax        ;output word in eax to address in dx
+mov dx, [bp+6]    ;addr
+mov eax, [bp+10]  ;dword
+out dx, eax       ;output word in eax to address in dx
 pop eax
 pop dx
 pop bp             ;restore bp
@@ -25,7 +25,7 @@ GLOBAL _inportl32
 _inportl32:
 push bp
 mov bp, sp
-mov dx,[bp+8]   ;move addr into DX 
+mov dx,[bp+6]   ;move addr into DX 
 in eax, dx      ;read 32bit port at address DX into EAX
 mov edx, eax    ;copy the result to edx
 shr edx, 16     ;shift the bits in edx so that dx contains the upper word
